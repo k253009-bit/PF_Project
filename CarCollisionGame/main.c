@@ -1,6 +1,6 @@
 #include "raylib.h"
-#include <math.h>
-#include <stdio.h> // Required for file operations (High Score)
+#include<math.h>
+#include<stdio.h> 
 
 #define ENEMY_COUNT 5
 #define SCALE 1.4f
@@ -8,11 +8,9 @@
 #define MIN_ENEMY_SPACING 250 
 #define OVERTAKE_DISTANCE 200.0f 
 
-// ROAD BOUNDARIES
 #define ROAD_LEFT_EDGE 140
 #define ROAD_RIGHT_EDGE 670
 
-// High Score File Path
 #define HIGHSCORE_FILE "highscore.txt"
 
 typedef enum { 
@@ -21,25 +19,24 @@ typedef enum {
     GAMEOVER 
 } GameState;
 
-typedef struct Enemy {
+typedef struct Enemy{
     Vector2 pos;
     Texture2D sprite;
     float speed;
     int currentLane;
 } Enemy;
 
-typedef struct Fuel {
+typedef struct Fuel{
     Vector2 pos;
     bool active;
-} Fuel;
+}Fuel;
 
-// Function to load the high score from a file
-int LoadHighScore() {
+int LoadHighScore(){
     FILE *file = fopen(HIGHSCORE_FILE, "r");
     int score = 0;
     if (file) {
-        if (fscanf(file, "%d", &score) != 1) {
-            score = 0; // File was empty or corrupt
+        if (fscanf(file, "%d",&score) != 1){
+            score = 0; 
         }
         fclose(file);
     }
@@ -55,24 +52,21 @@ void SaveHighScore(int score) {
     }
 }
 
-// Function to check if a lane is safe for AI movement
-bool IsLaneSafe(Enemy enemies[], int count, int targetLane, float myY, int myIndex) {
-    for (int i = 0; i < count; i++) {
+bool IsLaneSafe(Enemy enemies[], int count, int targetLane, float myY, int myIndex){
+    for (int i = 0; i < count; i++){
         if (i == myIndex) continue;
-        if (enemies[i].currentLane == targetLane) {
-            if (fabs(enemies[i].pos.y - myY) < MIN_ENEMY_SPACING) {
+        if (enemies[i].currentLane ==targetLane) {
+            if (fabs(enemies[i].pos.y - myY) <MIN_ENEMY_SPACING){
                 return false;
             }
         }
-    }
-    return true;
+    } return true;
 }
 
-// Function to draw a button and check for clicks
-bool DrawButton(Rectangle bounds, const char* text, Color baseColor) {
+bool DrawButton(Rectangle bounds, const char* text, Color baseColor){
     Vector2 mousePoint = GetMousePosition();
     bool clicked = false;
-    if (CheckCollisionPointRec(mousePoint, bounds)) {
+    if (CheckCollisionPointRec(mousePoint,bounds)){
         DrawRectangleRec(bounds, Fade(baseColor, 0.8f));
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) clicked = true;
     } else {
@@ -84,25 +78,22 @@ bool DrawButton(Rectangle bounds, const char* text, Color baseColor) {
     return clicked;
 }
 
-// Custom function to draw the visual fuel tank
-void DrawFuelGauge(int screenWidth, float currentFuel) {
+
+void DrawFuelGauge(int screenWidth,float currentFuel){
     const int tankWidth = 30;
     const int tankHeight = 150;
     const int tankX = screenWidth - tankWidth - 20;
     const int tankY = 20;
 
-    // Draw the grey tank background
     DrawRectangle(tankX, tankY, tankWidth, tankHeight, GRAY);
     DrawRectangleLinesEx((Rectangle){tankX, tankY, tankWidth, tankHeight}, 3, BLACK);
 
-    // Calculate the height of the green fuel bar
-    float fuelHeight = (currentFuel / 100.0f) * tankHeight;
+    
+    float fuelHeight = (currentFuel/100.0f) * tankHeight;
     float fuelY = tankY + (tankHeight - fuelHeight);
 
-    // Draw the green fuel bar
-    DrawRectangle(tankX + 2, (int)fuelY + 2, tankWidth - 4, (int)fuelHeight - 4, GREEN);
+    DrawRectangle(tankX+2, (int)fuelY + 2, tankWidth-4, (int)fuelHeight-4, GREEN);
 
-    // Draw fuel level text (optional, but helpful)
     DrawText("FUEL", tankX - 5, tankY + tankHeight + 10, 20, BLACK);
 }
 
@@ -129,7 +120,7 @@ int main(void)
     
     int lanes[LANE_COUNT] = { 200, 300, 450, 540 };
     
-    float carX = screenWidth / 2.0f - (mainCar.width * SCALE) / 2.0f;
+    float carX = screenWidth / 2.0f - (mainCar.width * SCALE)/2.0f;
     float carY = screenHeight - mainCar.height * SCALE - 20;
     
     float startSpeed = 5.0f;     
@@ -142,7 +133,7 @@ int main(void)
     float scoreTimer = 0;
     
     float scrollingBack = 0.0f;
-    float bgScale = (float)screenWidth / background.width; 
+    float bgScale = (float)screenWidth/background.width; 
     
     Enemy enemies[ENEMY_COUNT];
     Fuel fuelPickup = {0};
@@ -150,24 +141,18 @@ int main(void)
     
     bool crashed = false;
     bool outOfFuel = false;
-    
-    // --- HIGH SCORE VARIABLE & INITIAL LOAD ---
-    int highScore = LoadHighScore();
-    bool newHighScoreSet = false; // Flag to show "New High Score!" on game over
 
-    // Init Enemies
-    for (int i = 0; i < ENEMY_COUNT; i++) enemies[i].pos.y = -1000;
+    int highScore = LoadHighScore();
+    bool newHighScoreSet = false; 
+
+    for (int i=0; i < ENEMY_COUNT; i++) enemies[i].pos.y = -1000;
     
     Color goldColor = {255, 203, 0, 255}; 
 
     while (!WindowShouldClose())
     {
-        // -------------------------
-        //     GLOBAL UPDATES
-        // -------------------------
-        
         scrollingBack += currentSpeed; 
-        if (scrollingBack >= background.height * bgScale) {
+        if (scrollingBack >= background.height*bgScale) {
             scrollingBack = 0;
         }
 
@@ -178,43 +163,34 @@ int main(void)
 
             case GAMEPLAY:
             {
-                // Progressive Speed
                 if (currentSpeed < maxSpeed) {
                     currentSpeed += 0.003f; 
                 }
 
-                // Player Movement
                 if (IsKeyDown(KEY_LEFT))  carX -= 6;
                 if (IsKeyDown(KEY_RIGHT)) carX += 6;
 
-                // BOUNDARY CHECK (Crashing into the curb)
-                if (carX < ROAD_LEFT_EDGE || (carX + mainCar.width * SCALE) > ROAD_RIGHT_EDGE) {
+                if (carX < ROAD_LEFT_EDGE || (carX + mainCar.width*SCALE) > ROAD_RIGHT_EDGE){
                     crashed = true; 
                     currentState = GAMEOVER;
                 }
-
-                // Score Logic
                 scoreTimer += GetFrameTime();
                 if (scoreTimer >= 0.5f) {
-                    score += 1 + (int)(currentSpeed / 2); 
+                    score += 1 + (int)(currentSpeed/2); 
                     scoreTimer = 0;
                 }
 
-                // Fuel Drain
-                fuel -= fuelDrainRate + (currentSpeed * 0.002f); 
-                if (fuel <= 0) {
+                fuel -= fuelDrainRate+(currentSpeed * 0.002f); 
+                if (fuel <= 0){
                     fuel = 0;
                     outOfFuel = true;
                     currentState = GAMEOVER;
                 }
-
-                // Enemy Logic (AI movement and respawning)
-                for (int i = 0; i < ENEMY_COUNT; i++)
+                for (int i=0; i<ENEMY_COUNT; i++)
                 {
-                    enemies[i].pos.y += (currentSpeed - enemies[i].speed);
+                    enemies[i].pos.y += (currentSpeed-enemies[i].speed);
 
-                    // Traffic avoidance logic
-                    for (int j = 0; j < ENEMY_COUNT; j++) {
+                    for (int j =0; j<ENEMY_COUNT; j++) {
                         if (i == j) continue;
                         if (enemies[i].currentLane == enemies[j].currentLane) {
                             bool isCarInFront = (enemies[j].pos.y > enemies[i].pos.y);
@@ -229,7 +205,7 @@ int main(void)
                                     enemies[i].pos.x = lanes[leftLane];
                                     turned = true;
                                 }
-                                if (!turned) {
+                                if (!turned){
                                     int rightLane = enemies[i].currentLane + 1;
                                     if (rightLane < LANE_COUNT && IsLaneSafe(enemies, ENEMY_COUNT, rightLane, enemies[i].pos.y, i)) {
                                         enemies[i].currentLane = rightLane;
@@ -242,7 +218,6 @@ int main(void)
                         }
                     }
 
-                    // Respawn logic (repositioning off-screen)
                     if (enemies[i].pos.y > screenHeight) {
                         bool safeSpawn = false;
                         while (!safeSpawn) {
@@ -258,7 +233,7 @@ int main(void)
                                     }
                                 }
                             }
-                            if (safeSpawn) {
+                            if (safeSpawn){
                                 enemies[i].currentLane = lane;
                                 enemies[i].pos.x = lanes[lane];
                                 enemies[i].pos.y = newY;
@@ -269,24 +244,23 @@ int main(void)
                     }
                 }
 
-                // Fuel Pickup spawning
-                if (!fuelPickup.active) {
-                    if (GetRandomValue(0, 50) == 1) {
+                if (!fuelPickup.active){
+                    if (GetRandomValue(0, 50)==1) {
                         bool safeFuelPos = false;
                         int attempts = 0;
-                        while (!safeFuelPos && attempts < 10) {
+                        while (!safeFuelPos && attempts < 10){
                             safeFuelPos = true;
-                            int lane = GetRandomValue(0, LANE_COUNT - 1);
+                            int lane = GetRandomValue(0, LANE_COUNT-1);
                             float fuelY = GetRandomValue(-600, -200);
                             Rectangle proposedFuel = { lanes[lane], fuelY, petrolTex.width * SCALE, petrolTex.height * SCALE };
-                            for (int i = 0; i < ENEMY_COUNT; i++) {
+                            for (int i=0; i<ENEMY_COUNT; i++) {
                                 Rectangle enemyRect = { enemies[i].pos.x, enemies[i].pos.y, enemies[i].sprite.width * SCALE, enemies[i].sprite.height * SCALE };
                                 if (CheckCollisionRecs(proposedFuel, enemyRect)) {
                                     safeFuelPos = false;
                                     break;
                                 }
                             }
-                            if (safeFuelPos) {
+                            if (safeFuelPos){
                                 fuelPickup.pos.x = lanes[lane];
                                 fuelPickup.pos.y = fuelY;
                                 fuelPickup.active = true;
@@ -294,12 +268,12 @@ int main(void)
                             attempts++;
                         }
                     }
-                } else {
+                } else{
                     fuelPickup.pos.y += currentSpeed;
                     if (fuelPickup.pos.y > screenHeight) fuelPickup.active = false;
                 }
 
-                // Collision Checks
+                
                 Rectangle carRect = { carX, carY, mainCar.width * SCALE, mainCar.height * SCALE };
                 for (int i = 0; i < ENEMY_COUNT; i++) {
                     Rectangle eRect = { enemies[i].pos.x + 5, enemies[i].pos.y + 5, (enemies[i].sprite.width * SCALE) - 10, (enemies[i].sprite.height * SCALE) - 10 };
@@ -308,7 +282,7 @@ int main(void)
                         currentState = GAMEOVER;
                     }
                 }
-                if (fuelPickup.active) {
+                if (fuelPickup.active){
                     Rectangle fRect = { fuelPickup.pos.x, fuelPickup.pos.y, petrolTex.width * SCALE, petrolTex.height * SCALE };
                     if (CheckCollisionRecs(carRect, fRect)) {
                         fuel += 35;
@@ -321,7 +295,6 @@ int main(void)
 
             case GAMEOVER:
             {
-                // Check and save High Score only once when entering GAMEOVER state
                 if (score > highScore) {
                     highScore = score;
                     SaveHighScore(highScore);
@@ -330,25 +303,17 @@ int main(void)
                     newHighScoreSet = false;
                 }
             }
-            // Fallthrough to drawing logic on game over
             break;
         }
-
-        // -------------------------
-        //          DRAW
-        // -------------------------
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        // Draw scrolling background
         DrawTextureEx(background, (Vector2){0, scrollingBack}, 0.0f, bgScale, WHITE);
         DrawTextureEx(background, (Vector2){0, scrollingBack - (background.height * bgScale)}, 0.0f, bgScale, WHITE);
 
-        // Draw game elements (applies to GAMEPLAY and GAMEOVER fade)
         if (fuelPickup.active) DrawTextureEx(petrolTex, fuelPickup.pos, 0, SCALE, currentState == GAMEOVER ? Fade(WHITE, 0.5f) : WHITE);
         for (int i = 0; i < ENEMY_COUNT; i++) DrawTextureEx(enemies[i].sprite, enemies[i].pos, 0, SCALE, currentState == GAMEOVER ? Fade(WHITE, 0.5f) : WHITE);
         DrawTextureEx(mainCar, (Vector2){carX, carY}, 0, SCALE, currentState == GAMEOVER ? Fade(RED, 0.8f) : WHITE);
-
 
         switch (currentState) 
         {
@@ -358,13 +323,10 @@ int main(void)
                 DrawText("CAR TRAFFIC", screenWidth/2 - MeasureText("CAR TRAFFIC", 60)/2, 100, 60, ORANGE);
                 DrawText("COLLISION GAME", screenWidth/2 - MeasureText("COLLISION GAME", 30)/2, 160, 30, WHITE);
                 
-                // Display High Score on Menu
                 DrawText(TextFormat("High Score: %d", highScore), screenWidth/2 - MeasureText(TextFormat("High Score: %d", highScore), 20)/2, 210, 20, BLACK);
 
                 Rectangle playBtn = { screenWidth/2 - 100, 250, 200, 80 };
-                // --- MODIFIED: Removed "START GAME" text from the button ---
                 if (DrawButton(playBtn, "", goldColor)) {
-                    // RESET and initialize game state
                     score = 0;
                     fuel = 100.0f;
                     currentSpeed = startSpeed; 
@@ -374,7 +336,7 @@ int main(void)
                     fuelPickup.active = false;
                     newHighScoreSet = false;
                     
-                    for (int i = 0; i < ENEMY_COUNT; i++) {
+                    for (int i=0; i<ENEMY_COUNT; i++) {
                         bool safePos = false;
                         while (!safePos) {
                             safePos = true;
@@ -382,7 +344,7 @@ int main(void)
                             float startY = GetRandomValue(-1200, -100); 
                             for (int j = 0; j < i; j++) {
                                 if (lanes[lane] == (int)enemies[j].pos.x) {
-                                    if (fabs(startY - enemies[j].pos.y) < MIN_ENEMY_SPACING) {
+                                    if (fabs(startY - enemies[j].pos.y) < MIN_ENEMY_SPACING){
                                         safePos = false;
                                         break;
                                     }
@@ -399,7 +361,6 @@ int main(void)
                     }
                     currentState = GAMEPLAY;
                 }
-                // Draw play triangle symbol over the now-empty button
                 Vector2 v1 = { screenWidth/2 - 10, 275 };
                 Vector2 v2 = { screenWidth/2 - 10, 305 };
                 Vector2 v3 = { screenWidth/2 + 20, 290 };
@@ -408,18 +369,14 @@ int main(void)
 
             case GAMEPLAY:
             {
-                // Draw HUD (Score, High Score, Fuel Gauge)
                 DrawText(TextFormat("Score: %d", score), 20, 20, 25, BLACK);
                 DrawText(TextFormat("High Score: %d", highScore), 20, 55, 20, DARKBLUE);
-                
-                // NEW FUEL GAUGE DRAWING
                 DrawFuelGauge(screenWidth, fuel);
                 
             } break;
 
             case GAMEOVER:
             {
-                // Draw semi-transparent overlay
                 DrawRectangle(screenWidth/2 - 200, screenHeight/2 - 150, 400, 300, Fade(BLACK, 0.8f));
 
                 if (crashed) {
@@ -428,11 +385,7 @@ int main(void)
                 else if (outOfFuel) {
                     DrawText("OUT OF FUEL!", screenWidth/2 - MeasureText("OUT OF FUEL!", 40)/2, 120, 40, ORANGE);
                 }
-                
-                // Final Score
                 DrawText(TextFormat("Final Score: %d", score), screenWidth/2 - MeasureText(TextFormat("Final Score: %d", score), 30)/2, 180, 30, WHITE);
-                
-                // NEW HIGH SCORE MESSAGE
                 if (newHighScoreSet) {
                     DrawText("New High Score!", screenWidth/2 - MeasureText("New High Score!", 25)/2, 220, 25, goldColor);
                 }
@@ -442,13 +395,12 @@ int main(void)
 
                 Rectangle restartBtn = { screenWidth/2 - 80, 290, 160, 60 };
                 if (DrawButton(restartBtn, "RESTART", goldColor)) {
-                    // RESET and initialize game state
                     score = 0;
                     fuel = 100.0f;
                     currentSpeed = startSpeed; 
                     crashed = false;
                     outOfFuel = false;
-                    carX = screenWidth / 2.0f - (mainCar.width * SCALE) / 2.0f;
+                    carX = screenWidth/2.0f - (mainCar.width*SCALE)/2.0f;
                     fuelPickup.active = false;
                     newHighScoreSet = false;
 
@@ -460,7 +412,7 @@ int main(void)
                             float startY = GetRandomValue(-1200, -100); 
                             for (int j = 0; j < i; j++) {
                                 if (lanes[lane] == (int)enemies[j].pos.x) {
-                                    if (fabs(startY - enemies[j].pos.y) < MIN_ENEMY_SPACING) {
+                                    if (fabs(startY - enemies[j].pos.y) < MIN_ENEMY_SPACING){
                                         safePos = false;
                                         break;
                                     }
@@ -490,4 +442,5 @@ int main(void)
 
     CloseWindow();
     return 0;
+
 }
